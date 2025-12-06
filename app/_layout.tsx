@@ -1,24 +1,32 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
+// app/_layout.tsx
+import { Stack } from "expo-router";
+import React from "react";
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
-
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
+// Context Providers
+import { TransactionsProvider } from "../src/context/TransactionsContext";
+import { ThemeProvider } from "../src/context/ThemeContext";
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-      </Stack>
-      <StatusBar style="auto" />
+    <ThemeProvider>
+      <TransactionsProvider>
+        <Stack
+          screenOptions={{
+            headerShown: false,
+          }}
+        >
+          {/* Tab Navigation */}
+          <Stack.Screen name="(tabs)" />
+
+          {/* Add Expense Screen (modal) */}
+          <Stack.Screen
+            name="add-expense"
+            options={{
+              presentation: "modal",
+            }}
+          />
+        </Stack>
+      </TransactionsProvider>
     </ThemeProvider>
   );
 }

@@ -1,98 +1,240 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import FloatingAddButton from "@/src/components/FloatingAddButton";
+import TransactionCard from "@/src/components/TransactionsCard";
+import { useRouter } from "expo-router";
+import React, { useMemo } from "react";
+import { FlatList, StyleSheet, Text, View } from "react-native";
+import { useTransactions } from "@/src/context/TransactionsContext";
+import EmptyIllustration from "@/assets/images/empty.svg";
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Gelo test: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const router = useRouter();
+  const { transactions } = useTransactions();
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  // --------------------------------------------
+  // Hitungan Ringkas untuk Summary & Quick Stats
+  // --------------------------------------------
+
+  // Data Bulan Ini
+  const thisMonthData = useMemo(() => {
+  const now = new Date();
+  const filtered = transactions.filter((t) => {
+    const d = new Date(t.date);
+    return (
+      d.getMonth() === now.getMonth() &&
+      d.getFullYear() === now.getFullYear()
+    );
+  });
+
+  const total = filtered.reduce((sum, t) => sum + t.amount, 0);
+
+  // === RATATA HARIAN SESUAI EXPLORE ===
+  // Jumlah hari dalam bulan ini (misal Desember = 31)
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const avgDaily = daysInMonth > 0 ? total / daysInMonth : 0;
+
+  // kategori tertinggi
+  const grouped: Record<string, number> = {};
+  filtered.forEach((t) => {
+    grouped[t.category] = (grouped[t.category] || 0) + t.amount;
+  });
+
+  let topCategory = "-";
+  if (Object.keys(grouped).length > 0) {
+    topCategory = Object.entries(grouped).sort((a, b) => b[1] - a[1])[0][0];
+  }
+
+  return {
+    total,
+    avgDaily,
+    count: filtered.length,
+    topCategory,
+  };
+}, [transactions]);
+
+
+  // Total pengeluaran hari ini
+  const todayTotal = useMemo(() => {
+    const now = new Date();
+    return transactions
+      .filter((t) => {
+        const d = new Date(t.date);
+        return (
+          d.getDate() === now.getDate() &&
+          d.getMonth() === now.getMonth() &&
+          d.getFullYear() === now.getFullYear()
+        );
+      })
+      .reduce((sum, t) => sum + t.amount, 0);
+  }, [transactions]);
+
+  const renderItem = ({ item }: any) => (
+    <TransactionCard
+      item={item}
+      onPress={() =>
+        router.push({
+          pathname: "/detail/[id]",
+          params: { id: item.id },
+        })
+      }
+    />
+  );
+
+  return (
+    <View style={styles.container}>
+      {/* HEADER */}
+      <Text style={styles.headerTitle}>Hi, Haikal 👋</Text>
+      <Text style={styles.subTitle}>Ringkasan Bulan Ini</Text>
+
+      {/* SUMMARY CARD */}
+      <View style={styles.summaryCard}>
+        <Text style={styles.summaryLabel}>Total Pengeluaran Bulan Ini</Text>
+        <Text style={styles.summaryValue}>
+          Rp {thisMonthData.total.toLocaleString()}
+        </Text>
+
+        {/* Tambahan Total Transaksi */}
+        <Text style={styles.summarySubInfo}>
+          Total Transaksi: {thisMonthData.count}
+        </Text>
+      </View>
+
+      {/* QUICK STATS */}
+      <View style={styles.quickRow}>
+        <View style={styles.quickCard}>
+          <Text style={styles.quickLabel}>Total Pengeluaran Hari Ini</Text>
+          <Text style={styles.quickValue}>
+            Rp {todayTotal.toLocaleString()}
+          </Text>
+        </View>
+
+        <View style={styles.quickCard}>
+          <Text style={styles.quickLabel}>Rata-rata Pengeluaran per Hari</Text>
+          <Text style={styles.quickValue}>
+            Rp {Math.round(thisMonthData.avgDaily).toLocaleString()}
+          </Text>
+        </View>
+
+        <View style={styles.quickCard}>
+          <Text style={styles.quickLabel}>Kategori Tertinggi</Text>
+          <Text style={styles.quickValueSmall}>
+            {thisMonthData.topCategory}
+          </Text>
+        </View>
+      </View>
+
+      {/* LIST / EMPTY */}
+      {transactions.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <EmptyIllustration width={220} height={220} />
+          <Text style={styles.emptyText}>Belum ada transaksi</Text>
+          <Text style={styles.emptySub}>
+            Mulai catat pengeluaranmu hari ini ✨
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          data={transactions}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          contentContainerStyle={styles.listContent}
+        />
+      )}
+
+      <FloatingAddButton onPress={() => router.push("/add-expense")} />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
+    backgroundColor: "#f4f8ff",
+    paddingTop: 60,
+    paddingHorizontal: 20,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+
+  headerTitle: {
+    fontSize: 26,
+    fontWeight: "700",
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  subTitle: {
+    marginTop: 4,
+    fontSize: 14,
+    color: "#6b7280",
+    marginBottom: 20,
+  },
+
+  summaryCard: {
+    backgroundColor: "#4F46E5",
+    padding: 20,
+    borderRadius: 18,
+    marginBottom: 16,
+    overflow: "hidden",
+  },
+  summaryLabel: { color: "#e0edff", fontSize: 14 },
+  summaryValue: {
+    color: "#fff",
+    fontSize: 32,
+    fontWeight: "700",
+    marginTop: 4,
+  },
+
+  // tambahan style kecil
+  summarySubInfo: {
+    marginTop: 6,
+    color: "#e0edff",
+    fontSize: 13,
+  },
+
+  quickRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 20,
+  },
+
+  quickCard: {
+    flex: 1,
+    backgroundColor: "#fff",
+    padding: 12,
+    borderRadius: 14,
+    marginHorizontal: 4,
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 5,
+    elevation: 2,
+  },
+  quickLabel: {
+    fontSize: 12,
+    color: "#6b7280",
+  },
+  quickValue: {
+    fontSize: 18,
+    fontWeight: "700",
+    marginTop: 4,
+  },
+  quickValueSmall: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginTop: 6,
+  },
+
+  listContent: {
+    paddingBottom: 100,
+  },
+
+  emptyContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 40,
+  },
+  emptyText: {
+    fontSize: 20,
+    fontWeight: "bold",
+  },
+  emptySub: {
+    fontSize: 14,
+    marginTop: 6,
+    color: "#888",
   },
 });
