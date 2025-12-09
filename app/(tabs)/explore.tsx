@@ -2,19 +2,21 @@
 import React, { useMemo, useState } from "react";
 import { ScrollView, View, Text, StyleSheet } from "react-native";
 import { useTransactions } from "@/src/context/TransactionsContext";
-import FilterSelector from "@/components/explore/FilterSelector";
-import SummaryCards from "@/components/explore/SummaryCards";
-import SpendingLineChart from "@/components/explore/SpendingLineChart";
-import CategoryPieChart from "@/components/explore/CategoryPieChart";
-import WeeklyBarChart from "@/components/explore/WeeklyBarChart";
-import TopCategories from "@/components/explore/TopCategories";
-import EmptyState from "@/components/explore/EmptyState";
+import FilterSelector from "@/src/components/explore/FilterSelector";
+import SummaryCards from "@/src/components/explore/SummaryCards";
+import SpendingLineChart from "@/src/components/explore/SpendingLineChart";
+import CategoryPieChart from "@/src/components/explore/CategoryPieChart";
+import WeeklyBarChart from "@/src/components/explore/WeeklyBarChart";
+import TopCategories from "@/src/components/explore/TopCategories";
+import EmptyState from "@/src/components/explore/EmptyState";
+import { useThemeApp } from "@/src/context/ThemeContext";
 
 const chartColors = ["#6D28D9", "#1D4ED8", "#0EA5E9", "#10B981", "#F59E0B", "#EF4444"];
 
 export default function ExploreScreen() {
   const { transactions } = useTransactions();
   const [selected, setSelected] = useState<string>("this_month");
+  const { themeColors } = useThemeApp();
 
   // build month options from transactions
   const months = useMemo(() => {
@@ -147,8 +149,8 @@ export default function ExploreScreen() {
   const hasData = filtered.length > 0;
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.header}>Explore</Text>
+    <ScrollView style={[styles.container, { backgroundColor: themeColors.background }]}>
+      <Text style={[styles.header, { color: themeColors.text }]}>Explore</Text>
 
       <FilterSelector months={months} labels={labels} selected={selected} onSelect={setSelected} />
 
@@ -176,6 +178,6 @@ export default function ExploreScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#F8FAFF" },
-  header: { fontSize: 28, fontWeight: "700", marginBottom: 12, marginTop: 40, color: "#0f172a" },
+  container: { flex: 1, padding: 20 },
+  header: { fontSize: 28, fontWeight: "700", marginBottom: 12, marginTop: 40 },
 });

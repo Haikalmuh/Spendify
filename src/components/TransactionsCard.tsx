@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useThemeApp } from "../context/ThemeContext";
 import type { Transaction } from "../types";
 
 type TransactionCardProps = {
@@ -18,30 +19,54 @@ export default function TransactionCard({
   item,
   onPress,
 }: TransactionCardProps) {
+  const { themeColors } = useThemeApp();
+
   const amountText = new Intl.NumberFormat("id-ID", {
     style: "currency",
     currency: "IDR",
   }).format(item.amount);
 
-  // Gunakan ikon uang (pemasukan & pengeluaran)
   const iconName = item.amount >= 0 ? "cash-minus" : "cash-plus";
   const iconColor = item.amount >= 0 ? "#EF4444" : "#22C55E";
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity
+      style={[
+        styles.card,
+        { backgroundColor: themeColors.card, borderColor: themeColors.border },
+      ]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
       <View style={styles.left}>
         <MaterialCommunityIcons name={iconName} size={22} color={iconColor} />
 
         <View style={{ marginLeft: 10 }}>
-          <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
+          <Text
+            style={[styles.title, { color: themeColors.text }]}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
             {item.title}
           </Text>
 
-          <Text style={styles.category}>{item.category}</Text>
+          <Text
+            style={{
+              fontSize: 12,
+              color: themeColors.subtext,
+              opacity: 0.75, // opsional, biar beda dari title
+            }}
+          >
+            {item.category}
+          </Text>
         </View>
       </View>
 
-      <Text style={styles.amount} numberOfLines={1} ellipsizeMode="head">
+      <Text
+        style={[styles.amount, { color: themeColors.text }]}
+        numberOfLines={1}
+        ellipsizeMode="head"
+      >
         {amountText}
       </Text>
     </TouchableOpacity>
@@ -54,20 +79,14 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     padding: 16,
-    backgroundColor: "#fff",
     borderRadius: 14,
 
-    // Border stroke halus
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
 
-    // Shadow iOS
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.07,
     shadowRadius: 4,
-
-    // Shadow Android
     elevation: 1.5,
 
     marginBottom: 12,
@@ -87,7 +106,6 @@ const styles = StyleSheet.create({
 
   category: {
     fontSize: 12,
-    opacity: 0.6,
   },
 
   amount: {
